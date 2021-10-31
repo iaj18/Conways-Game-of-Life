@@ -1,0 +1,154 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Mar 30 11:46:45 2021
+
+@author: isabe
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+import random
+from scipy.optimize import curve_fit
+
+def life(S, shape):
+    grid=np.zeros(shape)
+    rules=np.zeros(shape)
+    for x in range(0,grid.shape[0]):
+        for y in range(0,grid.shape[1]):
+            if random.random()<0.5:
+                grid[x][y]=1
+            if random.random()<S:
+                rules[x][y]=1           
+    activities = []
+    output = []
+    output+=[grid]
+    live=[sum(sum(grid))]
+    time=500
+    for t in range(1,time):
+        activity = []
+        gridnew=np.zeros((grid.shape[0],grid.shape[1]))
+#        plt.imshow(output[t-1])
+#        plt.pause(0.01)
+#        plt.clf()
+        for x in range(0,grid.shape[0]-1):
+              for y in range(0,grid.shape[1]-1):
+                  total=0
+                  for x1 in range(x-1,x+2):
+                      for y1 in range(y-1,y+2):
+                          if x1!=x or y1!=y:
+                              if y1>=0 and y1<=grid.shape[1]-1 and x1>=0 and x1<=grid.shape[0]-1:
+                                  total+=output[t-1][x1][y1]
+                  if rules[x][y]==1:                      
+                      if total <2 or total>3:
+                          gridnew[x][y]=0
+                          activity +=[1]
+                      if total==3:
+                          gridnew[x][y]=1
+                          if output[t-1][x][y]==0:
+                              activity +=[1]
+                      if total==2 and output[t-1][x][y]==1:
+                          gridnew[x][y] = 1
+                  if rules[x][y]==0:
+                      gridnew[x][y] = grid[x][y]
+        activities += [len(activity)]
+        activities = activities + []
+        live+=[sum(sum(gridnew))]
+        output+=[gridnew]
+    return output, activities, live
+
+ 
+#S = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1] # fraction of grid positions the rules are applied to
+S = np.arange(0, 1, 0.05)
+shape=(32,32)
+activity_density = []
+live_density = []
+outputs = []
+for i in range(0, len(S)):
+    output, activity, live = life(S[i], shape)
+    #activity_density = activity_density + [activity]#/64]
+    live_density = live_density + [live]
+    outputs = outputs + [output]
+#plt.plot(S, live_density, '.')
+
+#a_d = []
+l_d =[]
+for i in range(0, len(live_density)):    
+    #ad = [x/(64**2) for x in activity_density[i][200:]]
+#    ad = activity_density[i][-1]/(64*64)
+    #a_d = a_d +[ad]
+    ld = [x/(32**2) for x in live_density[i][200:]]
+    l_d = l_d +[np.mean(ld)]
+    
+plt.plot(S, l_d, '.')
+
+testS = np.arange(0.5, 1, 0.05)    
+def power_law(testS, n, w, sc):
+    return n*np.power((sc - testS), w) - 0.026
+std, scov = curve_fit(power_law, S, l_d)
+(n, w, sc) = std
+print(std)
+plt.plot(S, power_law(S, *std), 'r-')
+plt.xlabel('s')
+plt.ylabel('steady-state density')
+plt.legend()
+
+
+#live_density = []
+#S = np.arange(0, 1, 0.05)
+#size = [16, 32, 64, 128, 256, 512]
+#for i in range(0, len(size)):
+#    ld = []
+#    for j in range(0, len(S)):
+#        output, activity, live = life(S[j], (size[i], size[i]))
+#        l_d = [x/(size[i]**2) for x in live[200:]]
+#        ld = ld + [l_d]
+#    live_density = live_density + [ld]
+#
+#lives = []
+#for i in range(0, len(live_density)):
+#    l = []
+#    for j in range(0, len(live_density[i])):
+#        l = l + [np.mean(live_density[i][j])]
+#    lives = lives + [l]
+#        
+#Sc = []
+#SCOV = []
+#testS = np.arange(0.5, 1, 0.05)    
+#def power_law(testS, n, w, sc):
+#    return n*np.power((sc - testS), w) - 0.026
+#for i in range(0, len(live_density)):
+#    std, scov = curve_fit(power_law, S, lives[i])
+#    (n, w, sc) = std
+#    Sc = Sc + [sc]
+#
+#def line(size, a):
+#    return a
+#for i in range(0, len(lives)):
+#    std, scov = curve_fit(power_law, S, lives[i])
+#    error = np.sqrt(np.diag(scov))
+#    plt.errorbar(size[i], Sc[i], yerr = error[2], marker = '+')
+#    
+#a, acov = curve_fit(line, size[3:], Sc[3:])
+#aerror = np.sqrt(np.diag(acov))
+#plt.axhline(y=a, color='grey', linestyle='--')
+#plt.xlabel("System Size")
+#plt.ylabel("$S_c$")
+#plt.show()   
+#    
+
+#activities2 = []
+#for j in range(0, len(S)):  
+#    activity2 = []
+#    for i in range(0, len(outputs[j])):
+#        activity2 = activity2 + [abs(sum(sum(outputs[j][i][8:-1])) - sum(sum(outputs[j][i-1][8:-1])))]#/(64**2)]
+#    activities2 = activities2 + [activity2]
+#
+#av_activity = []
+#last_a = []    
+#for i in range(0, len(activities2)):
+#    av_activity = av_activity + [np.mean(activities2[i])]
+#    last_a = last_a + [activities2[i][-1]]
+#
+#t = np.arange(0,100)    
+#for i in range(0, len(activities2)):
+#    plt.plot(t, activities2[i], '.')
